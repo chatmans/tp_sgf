@@ -14,8 +14,26 @@
  *    0 : ouverture réussie
  *   -1 : autre erreur
  */
-int syr1_fopen_write(char *name, SYR1_FILE *file) {
-  return -1;
+int syr1_fopen_write(char *name, SYR1_FILE* file) {
+  int search = search_entry (name, & (file->descriptor));
+  switch (search){
+    case 0:
+      // Allouer en memoire la taille d'un block d'E/S pour
+      // le tampon d'E/S
+      file->buffer = (unsigned char*) malloc (IO_BLOCK_SIZE);
+      if (file->buffer == NULL) return -1;
+      // Initialisations
+      strcpy (file->mode, "w");
+      file->current_block = 0;
+      // Copier le premier bloc dans le buffer
+      //if (read_block ( (file->descriptor).alloc[0], file->buffer) < 0)
+//	return -1;
+      file->file_offset = 0;
+      file->block_offset = 0;
+      return 0;
+    default: 
+      return -1;
+  }
 }
 
 /*
@@ -61,7 +79,65 @@ int syr1_fwrite(SYR1_FILE* file, int item_size, int nbitem, char *buffer)  {
  *    -4 : plus de blocs disques libres
  */
 int syr1_putc(unsigned char c, SYR1_FILE* file)  {
-  return -1;
+  if (file == NULL) return -1;
+  if (strcmp (file->mode, "w") != 0) return -1;
+  
+  // test de fin de fichier
+  if (file->file_offset > (file->descriptor).size) {
+	
+	// test de fin de bloc
+	if (file->block_offset >= IO_BLOCK_SIZE) {
+
+		// taille maximale de fichier
+		if (file->current_block == MAX_BLOCK_PER_FILE - 1) return -3;
+
+		// obtenir l'adresse d'un block libre sur le disque
+		int new_ua = get_allocation_unit();
+		if (new_ua == -1) return -4;
+		if (new_ua == -2) return -2;
+
+		// mettre a jour la table d'allocation du fichier
+		file->current_block++;
+		(file->descriptor).alloc[current_block] = new_ua;
+
+		// lire le bloc
+      		if (read_block (new_ua, file->buffer) < 0) return -2;
+		file->block_offset = 0;
+		
+	}
+
+	// augmenter la taille du fichier
+	(file->descriptor).size++;
+
+  }
+
+  file->buffer[file->block_offset] = c;
+  file->file_offset++;
+  file->block_offset++;
+
+  // fin de bloc
+  if (file->block_offset >= IO_BLOCK_SIZE) {
+
+  	if (write_block ( (file->descriptor).alloc[file->current_block],
+			file->buffer) < 0) 
+		return -2;
+
+	file->current_block++;
+      	//if (read_block ((file->descriptor).alloc[file->current_block]
+	//		, file->buffer) < 0) return -2;
+	file->block_offset = 0;
+  }
+
+/*
+  if (write_block ( (file->descriptor).alloc[file->current_block],
+			file->buffer) < 0) 
+	return -2;
+  
+  if (update_entry (& (file->descriptor)) < 0) return -2;
+*/
+
+  return 0;
+
 }
 
 
@@ -79,7 +155,16 @@ int syr1_putc(unsigned char c, SYR1_FILE* file)  {
  *   -2 : erreur d'entrée-sorties sur le périphérique de stockage
  */
 int syr1_fclose_write(SYR1_FILE* file) {
-  return -1;
+  if (file == NULL) return -1;
+
+  if (write_block ( (file->descriptor).alloc[file->current_block],
+			file->buffer) < 0) 
+	return -2;
+  
+  if (update_entry (& (file->descriptor)) < 0) return -2;
+
+  if (file->buffer != NULL) free (file->buffer);
+  return free_logical_file (file);
 }
 
 
