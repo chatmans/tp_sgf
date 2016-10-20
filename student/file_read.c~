@@ -89,7 +89,7 @@ int syr1_getc(SYR1_FILE *file) {
   if (strcmp (file->mode, "r") != 0) return -1;
 
   // Test de fin de fichier
-  if ((file->file_offset) > ((file->descriptor).size)) return -3;
+  if ((file->file_offset) * sizeof (char) > ((file->descriptor).size)) return -3;
 
   // Lire le caractere courant
   int res = (int) file->buffer[file->block_offset];
