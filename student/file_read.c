@@ -4,6 +4,10 @@
 #include<syr1_file.h>
 #include<physical_io.h>
 
+/* BINOME : NGUYEN NHON Berenger & POSNIC Antoine
+ * Groupe 1.1
+ */
+
 /* SYNOPSYS :
  * 	  int syr1_fopen_read(char *name, SYR1_FILE *file) {
  * DESCRIPTION :
@@ -103,7 +107,7 @@ int syr1_getc(SYR1_FILE *file) {
   file->file_offset++;
 
   // Test de fin de bloc
-  if (file->block_offset * sizeof (char) > IO_BLOCK_SIZE) {
+  if (file->block_offset == IO_BLOCK_SIZE) {
 
       // lire le bloc suivant
       file->current_block++;

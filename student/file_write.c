@@ -3,6 +3,11 @@
 #include<string.h>
 #include<syr1_file.h>
 
+/* BINOME : NGUYEN NHON Berenger & POSNIC Antoine
+ * Groupe 1.1
+ */
+
+
 /* SYNOPSYS :
  * 	  int syr1_fopen_write(char *name, SYR1_FILE *file) {
  * DESCRIPTION :
@@ -117,7 +122,7 @@ int syr1_putc(unsigned char c, SYR1_FILE* file)  {
 	if (file->file_offset == (file->descriptor).size) {
 
 		// cas ou le caractere doit etre ecrit dans un nouveau bloc
-		if ((file->descriptor).size % IO_BLOCK_SIZE == 0) {
+		if ( (file->descriptor).size % IO_BLOCK_SIZE == 0) {
 
 			// obtenir l'adresse d'un bloc libre
 			int new_ua = get_allocation_unit();
@@ -145,53 +150,6 @@ int syr1_putc(unsigned char c, SYR1_FILE* file)  {
 	file->file_offset++;
 
 	return 0;
-/*
-	// test de fin de fichier
-	if (file->file_offset > (file->descriptor).size) {
-	
-	// test de fin de bloc
-	if (file->block_offset >= IO_BLOCK_SIZE) {
-
-		// taille maximale de fichier
-		if (file->current_block == MAX_BLOCK_PER_FILE - 1) return -3;
-
-		// obtenir l'adresse d'un block libre sur le disque
-		int new_ua = get_allocation_unit();
-		if (new_ua == -1) return -4;
-		if (new_ua == -2) return -2;
-
-		// mettre a jour la table d'allocation du fichier
-		file->current_block++;
-		(file->descriptor).alloc[file->current_block] = new_ua;
-
-		// lire le bloc
-      		if (read_block (new_ua, file->buffer) < 0) return -2;
-		file->block_offset = 0;
-		
-	}
-
-	// augmenter la taille du fichier
-	(file->descriptor).size++;
-
-  }
-
-  file->buffer[file->block_offset] = c;
-  file->file_offset++;
-  file->block_offset++;
-
-  // fin de bloc
-  if (file->block_offset >= IO_BLOCK_SIZE) {
-
-  	if (write_block ( (file->descriptor).alloc[file->current_block],
-			file->buffer) < 0) 
-		return -2;
-
-	file->current_block++;
-	file->block_offset = 0;
-  }
-
-  return 0;
-*/
 }
 
 
@@ -211,12 +169,18 @@ int syr1_putc(unsigned char c, SYR1_FILE* file)  {
 int syr1_fclose_write(SYR1_FILE* file) {
   if (file == NULL) return -1;
 
+  // ecrire le contenu du tampon dans le dernier bloc
   if (write_block ( (file->descriptor).alloc[file->current_block],
 			file->buffer) < 0) 
 	return -2;
+
+  // mettre a jour la taille du fichier
+  (file->descriptor).size = file->file_offset;
   
+  // mettre a jour l'entree du catalogue
   if (update_entry (& (file->descriptor)) < 0) return -2;
 
+  // liberer les allocations memoire
   if (file->buffer != NULL) free (file->buffer);
 
   return free_logical_file (file);
