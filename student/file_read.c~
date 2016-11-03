@@ -83,16 +83,19 @@ int syr1_fread(SYR1_FILE *file, int item_size, int nbitem, char* buf) {
  *    -3 : fin de fichier
  */
 int syr1_getc(SYR1_FILE *file) {
+
   // Cas de BCF NULL
   if (file == NULL) return -1;
+
   // Cas de mode d'ouverture incorrect
   if (strcmp (file->mode, "r") != 0) return -1;
 
   // Test de fin de fichier
-  if ((file->file_offset) * sizeof (char) > ((file->descriptor).size)) return -3;
+  if ((file->file_offset) == ((file->descriptor).size)) return -3;
 
   // Lire le caractere courant
   int res = (int) file->buffer[file->block_offset];
+
   // Avancer au caractere suivant dans le tampon
   file->block_offset++;
   file->file_offset++;
@@ -124,9 +127,12 @@ int syr1_getc(SYR1_FILE *file) {
  *        (ou le fichier logiques file vaut NULL)
  */
 int syr1_fclose_read(SYR1_FILE* file) {
+
   if (file == NULL) return -1;
+
   // Liberer la memoire allouee pour le tampon d'E/S
   if (file->buffer != NULL) free (file->buffer);
+
   return free_logical_file (file);
 }
 

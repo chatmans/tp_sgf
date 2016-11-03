@@ -117,9 +117,8 @@ int syr1_putc(unsigned char c, SYR1_FILE* file)  {
 	if (file->file_offset == (file->descriptor).size) {
 
 		// cas ou le caractere doit etre ecrit dans un nouveau bloc
-		if ((file->descriptor).size % IO_BLOCK_SIZE == 0) {
+		if ((file->descriptor).size % IO_BLOCK_SIZE ==0) {
 
-			// obtenir l'adresse d'un bloc libre
 			int new_ua = get_allocation_unit();
 			switch (new_ua) {
 
@@ -127,7 +126,6 @@ int syr1_putc(unsigned char c, SYR1_FILE* file)  {
 
 				case -2: return -2;
 
-				// ajouter l'adresse disque a la table d'allocation
 				default:
 					(file->descriptor).alloc[file->current_block] = new_ua;
 			}		

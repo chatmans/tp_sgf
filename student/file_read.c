@@ -16,25 +16,27 @@
  *   -1 : autre erreur
  */
 int syr1_fopen_read(char *name, SYR1_FILE* file) {
-  int search = search_entry (name, & (file->descriptor));
-  switch (search){
-    case 0:
-      // Allouer en memoire la taille d'un block d'E/S pour
-      // le tampon d'E/S
-      file->buffer = (unsigned char*) malloc (IO_BLOCK_SIZE);
-      if (file->buffer == NULL) return -1;
-      // Initialisations
-      strcpy (file->mode, "r");
-      file->current_block = 0;
-      // Copier le premier bloc dans le buffer
-      if (read_block ( (file->descriptor).alloc[0], file->buffer) < 0)
+
+  if (search_entry (name, & (file->descriptor)) < 0)
 	return -1;
-      file->file_offset = 0;
-      file->block_offset = 0;
-      return 0;
-    default: 
-      return -1;
-  }
+
+	// Allouer en memoire la taille d'un block d'E/S pour
+	// le tampon d'E/S
+	file->buffer = (unsigned char*) malloc (IO_BLOCK_SIZE);
+	if (file->buffer == NULL) return -1;
+      
+	// Copier le premier bloc dans le buffer
+	if (read_block ( (file->descriptor).alloc[0], file->buffer) < 0)
+		return -1;
+	
+	// Initialisations
+	strcpy (file->mode, "r");
+	file->current_block = 0;
+	file->file_offset = 0;
+	file->block_offset = 0;
+
+	return 0;
+
 }
 
 /*
@@ -83,16 +85,19 @@ int syr1_fread(SYR1_FILE *file, int item_size, int nbitem, char* buf) {
  *    -3 : fin de fichier
  */
 int syr1_getc(SYR1_FILE *file) {
+
   // Cas de BCF NULL
   if (file == NULL) return -1;
+
   // Cas de mode d'ouverture incorrect
   if (strcmp (file->mode, "r") != 0) return -1;
 
   // Test de fin de fichier
-  if ((file->file_offset) > ((file->descriptor).size)) return -3;
+  if ((file->file_offset) == ((file->descriptor).size)) return -3;
 
   // Lire le caractere courant
   int res = (int) file->buffer[file->block_offset];
+
   // Avancer au caractere suivant dans le tampon
   file->block_offset++;
   file->file_offset++;
@@ -124,9 +129,12 @@ int syr1_getc(SYR1_FILE *file) {
  *        (ou le fichier logiques file vaut NULL)
  */
 int syr1_fclose_read(SYR1_FILE* file) {
+
   if (file == NULL) return -1;
+
   // Liberer la memoire allouee pour le tampon d'E/S
   if (file->buffer != NULL) free (file->buffer);
+
   return free_logical_file (file);
 }
 
